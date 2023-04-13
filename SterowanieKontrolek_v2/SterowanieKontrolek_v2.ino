@@ -1,49 +1,55 @@
+#include <Wire.h>
+
 // Definicje lapmp sygnałowych
-//#define LampaSHP 13
-#define LampaCzuwak 13
-//#define LampaJazdyNaOporach 11
+#define LampaSHP 13
+#define LampaCzuwak 12
+#define LampaJazdyNaOporach 11
 //#define LampaWylacznikaSzybkiego 10
 
-// Definicja przełączników 
-#define PrzelacznikBateria 3
-#define PrzelacznikPantografPrzod 5
-#define PrzelacznikPantografTyl 6
-#define PrzelacznikPrzetwornicy 10
-#define PrzelacznikSprezarki 11
+// Definicja przełączników
+//#define PrzelacznikBateria 3
+//#define PrzelacznikPantografPrzod 5
+//#define PrzelacznikPantografTyl 6
+//#define PrzelacznikPrzetwornicy 10
+//#define PrzelacznikSprezarki 11
 
 // Definicje guzików
-#define GuzikZwiekszeniePozycjiNastawnikaKierunku 2
-#define GuzikCzuwakSHP 4
-#define GuzikOdblokowaniaPrzekaznikaNadmiarowegoSilnikow 7
-#define GuzikOdblokowaniaPrzekaznikaNadmiarowegoPrzetwornicy 8
-#define GuzikWylacznikaSzybkiego 9
-#define AddMasterController A5
-#define SubtrackMasterController A4
-#define AddSecondController A3
-#define SubtrackSecondController A2
+#define GuzikWymuszeniaKomunikacji 3
+//#define GuzikZwiekszeniePozycjiNastawnikaKierunku 2
+#define GuzikCzuwakSHP 2
+//#define GuzikOdblokowaniaPrzekaznikaNadmiarowegoSilnikow 7
+//#define GuzikOdblokowaniaPrzekaznikaNadmiarowegoPrzetwornicy 8
+//#define GuzikWylacznikaSzybkiego 9
+//#define AddMasterController A5
+//#define SubtrackMasterController A4
+//#define AddSecondController A3
+//#define SubtrackSecondController A2
 
 // Definicje potencjometru
-//#define PotencjometrTrainBrake A5
-//#define PotencjometrIndependentBrake A4
+#define PotencjometrTrainBrake A5
+#define PotencjometrIndependentBrake A4
 
+volatile uint8_t TablicaZPC[52] = { 0 };
+volatile uint8_t TablicaDoPC[20] = { 0 };
 
 void setup() {
   // Konfiguracja lamp
-  //pinMode(LampaSHP, OUTPUT);     //ustawienie pinu 13 (wbudowana w Arduino dioda LED) jako wyjście cyfrowe
-  //digitalWrite(LampaSHP, LOW);     //ustawienie stanu niskiego na pinie 13
+  pinMode(LampaSHP, OUTPUT);    //ustawienie pinu 13 (wbudowana w Arduino dioda LED) jako wyjście cyfrowe
+  digitalWrite(LampaSHP, LOW);  //ustawienie stanu niskiego na pinie 13
   pinMode(LampaCzuwak, OUTPUT);
   digitalWrite(LampaCzuwak, LOW);
-  //pinMode(LampaJazdyNaOporach, OUTPUT);
-  //digitalWrite(LampaJazdyNaOporach, LOW);
+  pinMode(LampaJazdyNaOporach, OUTPUT);
+  digitalWrite(LampaJazdyNaOporach, LOW);
   //pinMode(LampaWylacznikaSzybkiego, OUTPUT);
   //digitalWrite(LampaWylacznikaSzybkiego, LOW);
-  
+
   // Konfiguracja guzików i przełączników
   // INPUT_PULLUP - ustawienie pinu 2 jako wejście z podciągnięciem do zasilania
-  pinMode(GuzikZwiekszeniePozycjiNastawnikaKierunku, INPUT_PULLUP);     
-  pinMode(PrzelacznikBateria, INPUT_PULLUP);     
+  pinMode(GuzikWymuszeniaKomunikacji, INPUT_PULLUP);
+  //pinMode(GuzikZwiekszeniePozycjiNastawnikaKierunku, INPUT_PULLUP);
+  //pinMode(PrzelacznikBateria, INPUT_PULLUP);
   pinMode(GuzikCzuwakSHP, INPUT_PULLUP);
-  pinMode(PrzelacznikPantografPrzod, INPUT_PULLUP);
+  /*(pinMode(PrzelacznikPantografPrzod, INPUT_PULLUP);
   pinMode(PrzelacznikPantografTyl, INPUT_PULLUP);
   pinMode(GuzikOdblokowaniaPrzekaznikaNadmiarowegoSilnikow, INPUT_PULLUP);
   pinMode(GuzikOdblokowaniaPrzekaznikaNadmiarowegoPrzetwornicy, INPUT_PULLUP);
@@ -53,49 +59,111 @@ void setup() {
   pinMode(AddMasterController, INPUT_PULLUP);
   pinMode(SubtrackMasterController, INPUT_PULLUP);
   pinMode(AddSecondController, INPUT_PULLUP);
-  pinMode(SubtrackSecondController, INPUT_PULLUP);
+  pinMode(SubtrackSecondController, INPUT_PULLUP);*/
+
+  // Inicjalizacja preambuły
+  TablicaDoPC[0] = 0xEF;
+  TablicaDoPC[1] = 0xEF;
+  TablicaDoPC[2] = 0xEF;
+  TablicaDoPC[3] = 0xEF;
 
   // Konfiguracja komunikacji
-  Serial.begin(9600);           //nawiązanie komunikacji z MaSzyna
+  Serial.begin(115200);  //nawiązanie komunikacji z MaSzyna
   Serial.setTimeout(10);
-  while(!Serial){};             //czekanie do nawiązania komunikacji z komputerem
+  while (!Serial) {};  //czekanie do nawiązania komunikacji z komputerem
 }
 
 #pragma region ZmienneGlobalne
-volatile uint8_t TablicaZPC[52] = {0};
-volatile uint8_t TablicaDoPC[16] = {0};
 
-bool _blockAddMasterController = true;      // nastawnik
+bool _blockAddMasterController = true;  // nastawnik
 bool _blockSubtrackMasterController = true;
 int currentPositionMasterController = 0;
 
-bool _blockAddSecondController = true;      // bocznik
+bool _blockAddSecondController = true;  // bocznik
 bool _blockSubtrackSecondController = true;
 int currentPositionSecondController = 0;
+
+bool _blockGuzikWymuszeniaKomunikacji = true; // awaryjne wymuszenie komunikacji
+
+int prevPotencjometrTrainBrake = 0; // Hamulec glowny
+int prevPotencjometrIndependentBrake = 0; // Hamulec lokomotywy
 #pragma endregion
 
 void loop() {
-  for(byte i=0; i<52; i++){     //pętla umożliwiająca wysłanie 31 bajtów danych
-   while(!Serial.available()){};     //czekamy na odebranie bajtu danych
+  // Send/refresh data
+  while (!Serial.available()) {
+      if (!(digitalRead(GuzikWymuszeniaKomunikacji))) 
+      {
+        if(_blockGuzikWymuszeniaKomunikacji)
+          Serial.write((char*)TablicaDoPC, 20);	
+        
+        _blockGuzikWymuszeniaKomunikacji = false;
+      }
+      else _blockGuzikWymuszeniaKomunikacji = true;
+    }
 
-   TablicaZPC[i] = Serial.read();     //zapis danych do naszej tablicy
+  Serial.readBytes((char*)TablicaZPC, 52);		// Read data from PC
+  Serial.write((char*)TablicaDoPC, 20);		// Send data from controller to PC
 
-   if(i < 20){   //zabezpiecznie, żeby nie wysłać za dużo danych do komputera
-    Serial.flush();     //sprawczanie czy już wysłano wcześniejsze dane (czekanie na wysłanie danych)
-    if(i < 4)
+  int PrzesunieciePreambuly = 0;
+  // Sprawdzenie czy nie gubie preambuły
+  if(!(TablicaZPC[0] == 0xEF && TablicaZPC[1] == 0xEF && TablicaZPC[2] == 0xEF && TablicaZPC[3] == 0xEF))
+  {
+    if(TablicaZPC[0] == 0xEF && TablicaZPC[1] == 0xEF && TablicaZPC[2] == 0xEF)
     {
-      Serial.write(0xEF); // Preambuła
+      PrzesunieciePreambuly = 1;
     }
     else
     {
-      Serial.write(TablicaDoPC[i-4]);     // wysłanie danych do komputera
+      if(TablicaZPC[0] == 0xEF && TablicaZPC[1] == 0xEF)
+      {
+        PrzesunieciePreambuly = 2;
+      }
+      else
+      {
+        if(TablicaZPC[0] == 0xEF)
+        {
+          PrzesunieciePreambuly = 3;
+        }
+        else
+        {
+          digitalWrite(LampaJazdyNaOporach, HIGH);
+          digitalWrite(LampaSHP, HIGH);
+          digitalWrite(LampaCzuwak, HIGH);
+        }
+      }
     }
-   }
-
   }
 
-  delay(10);
+#pragma region UstawianieLamp
+  digitalWrite(LampaJazdyNaOporach, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 1)));
+  digitalWrite(LampaSHP, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 7)));
+  digitalWrite(LampaCzuwak, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 6)));
+  //digitalWrite(LampaWylacznikaSzybkiego, (bitRead(TablicaZPC[9], 5)));
+#pragma endregion
 
+  if (!(digitalRead(GuzikCzuwakSHP)))
+    bitWrite(TablicaDoPC[4], 7, 1);
+  else bitWrite(TablicaDoPC[4], 7, 0);
+    
+  int tempTrainBrake = analogRead(PotencjometrTrainBrake);
+  if(((tempTrainBrake - prevPotencjometrTrainBrake) > 3) || ((prevPotencjometrTrainBrake - tempTrainBrake) > 3))
+  {
+    TablicaDoPC[12] = lowByte(tempTrainBrake);
+    TablicaDoPC[13] = highByte(tempTrainBrake);
+    prevPotencjometrTrainBrake = tempTrainBrake;
+  }
+
+
+  int tempIndependentBrake = analogRead(PotencjometrIndependentBrake);
+  if(((tempIndependentBrake - prevPotencjometrIndependentBrake) > 3) || ((prevPotencjometrIndependentBrake - tempIndependentBrake) > 3))
+  {
+    TablicaDoPC[14] = lowByte(tempIndependentBrake);
+    TablicaDoPC[15] = highByte(tempIndependentBrake);
+    prevPotencjometrIndependentBrake = tempIndependentBrake;
+  }
+  
+  /*
   #pragma region Nastawnik
     if(!(digitalRead(AddMasterController)))
       {
@@ -155,11 +223,6 @@ void loop() {
       }
       else _blockSubtrackSecondController = true;
 #pragma endregion
-
-      if(!(digitalRead(GuzikCzuwakSHP)))
-        bitWrite(TablicaDoPC[0], 7, 1);
-      else bitWrite(TablicaDoPC[0], 7, 0); 
-      
       if(!(digitalRead(PrzelacznikPantografPrzod)))
         bitWrite(TablicaDoPC[2], 0, 1);
       else bitWrite(TablicaDoPC[2], 0, 0); 
@@ -187,26 +250,9 @@ void loop() {
       if(!(digitalRead(PrzelacznikSprezarki)))
         bitWrite(TablicaDoPC[1], 2, 1);
       else bitWrite(TablicaDoPC[1], 2, 0); 
+*/
 
-#pragma region UstawianieLamp
-      //digitalWrite(LampaJazdyNaOporach, (bitRead(TablicaZPC[8], 1))); 
-      //digitalWrite(LampaSHP, (bitRead(TablicaZPC[8], 7)));
-      digitalWrite(LampaCzuwak, (bitRead(TablicaZPC[8], 6)));
-      //digitalWrite(LampaWylacznikaSzybkiego, (bitRead(TablicaZPC[9], 5)));
-#pragma endregion
-
-  /*int tempTrainBrake = analogRead(PotencjometrTrainBrake);
-  TablicaDoPC[8] = lowByte(tempTrainBrake);
-  TablicaDoPC[9] = highByte(tempTrainBrake);
-
-  
-  int tempIndependentBrake = analogRead(PotencjometrIndependentBrake);
-  TablicaDoPC[10] = lowByte(tempIndependentBrake);
-  TablicaDoPC[11] = highByte(tempIndependentBrake);*/
-  
- // if(!(digitalRead(PrzelacznikBateria)))      // jeśli wejście na pinie 2 ma stan niski (zwarte przycikiem do masy)
- //   bitWrite(TablicaDoPC[3], 0, 1);           // ustawienie bitu 1 w bajcie 3 w TablicaDoPC na 1 ( zał. baterii)
- // else bitWrite(TablicaDoPC[3], 0, 0);        // w przeciwnym przypadku na 0
-
-  
+  // if(!(digitalRead(PrzelacznikBateria)))      // jeśli wejście na pinie 2 ma stan niski (zwarte przycikiem do masy)
+  //   bitWrite(TablicaDoPC[3], 0, 1);           // ustawienie bitu 1 w bajcie 3 w TablicaDoPC na 1 ( zał. baterii)
+  // else bitWrite(TablicaDoPC[3], 0, 0);        // w przeciwnym przypadku na 0
 }

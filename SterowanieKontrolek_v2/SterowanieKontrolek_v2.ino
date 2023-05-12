@@ -21,8 +21,8 @@
 // Definicje guzików i przełączników
 #define GuzikWymuszeniaKomunikacji 13
 #define GuzikAktywacjaSyrenyWysokotonowej 22
-#define GuzikAktywacjaSyrenyNiskotonowej 24
-#define GuzikCzuwakSHP 26
+#define GuzikAktywacjaSyrenyNiskotonowej 26
+#define GuzikCzuwakSHP 24
 #define GuzikOtwarcieWylacznikaSzybkiego 28
 #define GuzikZamkniecieWylacznikaSzybkiego 30
 #define GuzikOdblokowaniaPrzekaznikaNadmiarowegoSilnikow 32
@@ -30,8 +30,8 @@
 #define GuzikRozlaczenieStycznikowLiniowych 36
 #define GuzikZalaczeniePrzetwornicy 38
 #define GuzikZalaczenieSprezarki 40
-#define GuzikAktywacjaPiasecznicy 42
-//#define GuzikZalaczenieOgrzewaniaPociagu 44
+//#define GuzikAktywacjaPiasecznicy 42
+#define GuzikZalaczenieOgrzewaniaPociagu 42
 #define GuzikUstawienieRozruchuNiskiego 46
 #define GuzikPodniesieniePantografuPrzedniego 48
 #define GuzikPodniesieniePantografuTylnego 50
@@ -128,8 +128,8 @@ void setup() {
   pinMode(GuzikRozlaczenieStycznikowLiniowych, INPUT_PULLUP);
   pinMode(GuzikZalaczeniePrzetwornicy, INPUT_PULLUP);
   pinMode(GuzikZalaczenieSprezarki, INPUT_PULLUP);
-  pinMode(GuzikAktywacjaPiasecznicy, INPUT_PULLUP);
-//  pinMode(GuzikZalaczenieOgrzewaniaPociagu, INPUT_PULLUP);
+ // pinMode(GuzikAktywacjaPiasecznicy, INPUT_PULLUP);
+  pinMode(GuzikZalaczenieOgrzewaniaPociagu, INPUT_PULLUP);
   pinMode(GuzikUstawienieRozruchuNiskiego, INPUT_PULLUP);
   pinMode(GuzikPodniesieniePantografuPrzedniego, INPUT_PULLUP);
   pinMode(GuzikPodniesieniePantografuTylnego, INPUT_PULLUP);
@@ -177,7 +177,7 @@ pinMode(PWM_TankPress, OUTPUT);
   Serial.setTimeout(10);
   while (!Serial) {};  //czekanie do nawiązania komunikacji z komputerem  
   
-  Serial3.begin(115200);
+  Serial3.begin(9600);  // Hasler
   Serial3.setTimeout(10);
 #pragma endregion
 }
@@ -257,21 +257,21 @@ void loop() {
 #pragma endregion
 
 #pragma region UstawianieLamp
-  digitalWrite(LampaSHP, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 7)));
-  digitalWrite(LampaCzuwak, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 6)));
-  digitalWrite(LampaVentilatorOverload, (bitRead(TablicaZPC[6 - PrzesunieciePreambuly], 1)));
-  digitalWrite(LampaMotorOverloadThreshold, (bitRead(TablicaZPC[6 - PrzesunieciePreambuly], 2)));
-  digitalWrite(LampaBattery, (bitRead(TablicaZPC[7 - PrzesunieciePreambuly], 6)));
-  digitalWrite(LampaTrainHeating, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 0)));
-  digitalWrite(LampaMotorResistors, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 1)));
-  digitalWrite(LampaWheelSlip, (bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 2)));
-  digitalWrite(LampaMotorConnectors, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 0)));
-  digitalWrite(LampaConverterOverload, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 2)));
-  digitalWrite(LampaGroundRelay, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 3)));
-  digitalWrite(LampaMotorOverload, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 4)));
-  digitalWrite(LampaLineBreaker, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 5)));
-  digitalWrite(LampaCompressorOverload, (bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 6)));
-  digitalWrite(LampaRadioStop, (bitRead(TablicaZPC[10 - PrzesunieciePreambuly], 5)));
+  digitalWrite(LampaSHP, !(bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 7)));
+  digitalWrite(LampaCzuwak, !(bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 6)));
+  digitalWrite(LampaVentilatorOverload, !(bitRead(TablicaZPC[6 - PrzesunieciePreambuly], 1)));
+  digitalWrite(LampaMotorOverloadThreshold, !(bitRead(TablicaZPC[6 - PrzesunieciePreambuly], 2)));
+  digitalWrite(LampaBattery, !(bitRead(TablicaZPC[7 - PrzesunieciePreambuly], 6)));
+  digitalWrite(LampaTrainHeating, !(bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 0)));
+  digitalWrite(LampaMotorResistors, !(bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 1)));
+  digitalWrite(LampaWheelSlip, !(bitRead(TablicaZPC[8 - PrzesunieciePreambuly], 2)));
+  digitalWrite(LampaMotorConnectors, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 0)));
+  digitalWrite(LampaConverterOverload, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 2)));
+  digitalWrite(LampaGroundRelay, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 3)));
+  digitalWrite(LampaMotorOverload, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 4)));
+  digitalWrite(LampaLineBreaker, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 5)));
+  digitalWrite(LampaCompressorOverload, !(bitRead(TablicaZPC[9 - PrzesunieciePreambuly], 6)));
+  digitalWrite(LampaRadioStop, !(bitRead(TablicaZPC[10 - PrzesunieciePreambuly], 5)));
 #pragma endregion
 
 #pragma region OdczytGuzikow
@@ -315,13 +315,13 @@ void loop() {
     bitWrite(TablicaDoPC[5], 2, 1);
   else bitWrite(TablicaDoPC[5], 2, 0);
   
-  if (!(digitalRead(GuzikAktywacjaPiasecznicy)))
-    bitWrite(TablicaDoPC[5], 3, 1);
-  else bitWrite(TablicaDoPC[5], 3, 0);
+//  if (!(digitalRead(GuzikAktywacjaPiasecznicy)))
+//    bitWrite(TablicaDoPC[5], 3, 1);
+//  else bitWrite(TablicaDoPC[5], 3, 0);
   
-//  if (!(digitalRead(GuzikZalaczenieOgrzewaniaPociagu)))
-//    bitWrite(TablicaDoPC[5], 4, 1);
-// else bitWrite(TablicaDoPC[5], 4, 0);
+  if (!(digitalRead(GuzikZalaczenieOgrzewaniaPociagu)))
+    bitWrite(TablicaDoPC[5], 4, 1);
+  else bitWrite(TablicaDoPC[5], 4, 0);
   
   if (!(digitalRead(GuzikUstawienieRozruchuNiskiego)))
     bitWrite(TablicaDoPC[5], 7, 1);

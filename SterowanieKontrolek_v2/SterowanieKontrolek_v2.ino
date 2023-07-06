@@ -1,3 +1,5 @@
+#include <ArduinoFrameCRC.h>
+
 #pragma region DefinicjeLamp
 // Definicje lapmp sygnałowych
 #define LampaSHP 23
@@ -80,7 +82,7 @@ volatile uint8_t TablicaZPC[52] = { 0 };
 volatile uint8_t TablicaDoPC[20] = { 0 };
 
 void setup() {
-#pragma region InicjalizacjaKomunikacji
+#pragma region InicjalizacjaLamp
   // Konfiguracja lamp
   pinMode(LampaSHP, OUTPUT);
   digitalWrite(LampaSHP, LOW);
@@ -156,13 +158,13 @@ void setup() {
 #pragma endregion
 
 #pragma region InicjalizacjaPWM
-pinMode(PWM_LV_voltage, OUTPUT);
-pinMode(PWM_HV_current_1, OUTPUT);
-pinMode(PWM_HV_current_2, OUTPUT);
-pinMode(PWM_HV_voltage, OUTPUT);
-pinMode(PWM_BreakPress, OUTPUT);
-pinMode(PWM_PipePress, OUTPUT);
-pinMode(PWM_TankPress, OUTPUT);
+  pinMode(PWM_LV_voltage, OUTPUT);
+  pinMode(PWM_HV_current_1, OUTPUT);
+  pinMode(PWM_HV_current_2, OUTPUT);
+  pinMode(PWM_HV_voltage, OUTPUT);
+  pinMode(PWM_BreakPress, OUTPUT);
+  pinMode(PWM_PipePress, OUTPUT);
+  pinMode(PWM_TankPress, OUTPUT);
 #pragma endregion
 
 #pragma region InicjalizacjaKomunikacji
@@ -193,27 +195,29 @@ bool _blockSubtrackSecondController = true;
 int currentPositionSecondController = 0;
 
 bool _blockGuzikWymuszeniaKomunikacji = true; // awaryjne wymuszenie komunikacji
+
+ArduinoFrameCRC haslerFrame;
 #pragma endregion
 
 void loop() {  
 #pragma region KomunikacjaZasadnicza
   // Send/refresh data
   while (!Serial.available()) {
-      if (!(digitalRead(GuzikWymuszeniaKomunikacji))) 
-      {
-        if(_blockGuzikWymuszeniaKomunikacji)
-          Serial.write((char*)TablicaDoPC, 20);	
-        
-        _blockGuzikWymuszeniaKomunikacji = false;
-      }
-      else _blockGuzikWymuszeniaKomunikacji = true;
+    if(!(digitalRead(GuzikWymuszeniaKomunikacji))) 
+    {
+      if(_blockGuzikWymuszeniaKomunikacji)
+        Serial.write((char*)TablicaDoPC, 20);	
+      
+      _blockGuzikWymuszeniaKomunikacji = false;
     }
+    else _blockGuzikWymuszeniaKomunikacji = true;
+  }
 
   Serial.readBytes((char*)TablicaZPC, 52);		// Read data from PC
   Serial.write((char*)TablicaDoPC, 20);		// Send data from controller to PC
 
-  int PrzesunieciePreambuly = 0;
   // Sprawdzenie czy nie gubie preambuły
+  int PrzesunieciePreambuly = 0;
   if(!(TablicaZPC[0] == 0xEF && TablicaZPC[1] == 0xEF && TablicaZPC[2] == 0xEF && TablicaZPC[3] == 0xEF))
   {
     if(TablicaZPC[0] == 0xEF && TablicaZPC[1] == 0xEF && TablicaZPC[2] == 0xEF)
@@ -234,21 +238,21 @@ void loop() {
         }
         else
         {
-          digitalWrite(LampaSHP, HIGH);
-          digitalWrite(LampaCzuwak, HIGH);
-          digitalWrite(LampaVentilatorOverload, HIGH);
-          digitalWrite(LampaMotorOverloadThreshold, HIGH);
-          digitalWrite(LampaBattery, HIGH);
-          digitalWrite(LampaTrainHeating, HIGH);
-          digitalWrite(LampaMotorResistors, HIGH);
-          digitalWrite(LampaWheelSlip, HIGH);
-          digitalWrite(LampaMotorConnectors, HIGH);
-          digitalWrite(LampaConverterOverload, HIGH);
-          digitalWrite(LampaGroundRelay, HIGH);
-          digitalWrite(LampaMotorOverload, HIGH);
-          digitalWrite(LampaLineBreaker, HIGH);
-          digitalWrite(LampaCompressorOverload, HIGH);
-          digitalWrite(LampaRadioStop, HIGH);
+          digitalWrite(LampaSHP, LOW);
+          digitalWrite(LampaCzuwak, LOW);
+          digitalWrite(LampaVentilatorOverload, LOW);
+          digitalWrite(LampaMotorOverloadThreshold, LOW);
+          digitalWrite(LampaBattery, LOW);
+          digitalWrite(LampaTrainHeating, LOW);
+          digitalWrite(LampaMotorResistors, LOW);
+          digitalWrite(LampaWheelSlip, LOW);
+          digitalWrite(LampaMotorConnectors, LOW);
+          digitalWrite(LampaConverterOverload, LOW);
+          digitalWrite(LampaGroundRelay, LOW);
+          digitalWrite(LampaMotorOverload, LOW);
+          digitalWrite(LampaLineBreaker, LOW);
+          digitalWrite(LampaCompressorOverload, LOW);
+          digitalWrite(LampaRadioStop, LOW);
           delay(3000);          
         }
       }
@@ -400,46 +404,46 @@ void loop() {
     
 #pragma region OdczytHamulcow
   int tempTrainBrake = analogRead(PotencjometrTrainBrake);
-    TablicaDoPC[12] = lowByte(tempTrainBrake);
-    TablicaDoPC[13] = highByte(tempTrainBrake);
+  TablicaDoPC[12] = lowByte(tempTrainBrake);
+  TablicaDoPC[13] = highByte(tempTrainBrake);
 
   int tempIndependentBrake = analogRead(PotencjometrIndependentBrake);
-    TablicaDoPC[14] = lowByte(tempIndependentBrake);
-    TablicaDoPC[15] = highByte(tempIndependentBrake);
+  TablicaDoPC[14] = lowByte(tempIndependentBrake);
+  TablicaDoPC[15] = highByte(tempIndependentBrake);
 #pragma endregion
   
 #pragma region Nastawnik
   if(!(digitalRead(AddMasterController)))
+  {
+    if(_blockAddMasterController)
     {
-      if(_blockAddMasterController)
-      {
-        currentPositionMasterController++;
-        if(currentPositionMasterController > 43) currentPositionMasterController = 43;
-        TablicaDoPC[10] = currentPositionMasterController;
-        _blockAddMasterController = false;
-      }
+      currentPositionMasterController++;
+      if(currentPositionMasterController > 43) currentPositionMasterController = 43;
+      TablicaDoPC[10] = currentPositionMasterController;
+      _blockAddMasterController = false;
     }
-    else _blockAddMasterController = true;
-    
-    if(!(digitalRead(SubtrackMasterController)))
+  }
+  else _blockAddMasterController = true;
+  
+  if(!(digitalRead(SubtrackMasterController)))
+  {
+    if(_blockSubtrackMasterController)
     {
-      if(_blockSubtrackMasterController)
-      {
-        currentPositionMasterController--;
-        if(currentPositionMasterController < 0 ) currentPositionMasterController = 0;
-        TablicaDoPC[10] = currentPositionMasterController;
-        _blockSubtrackMasterController = false;
-      }
+      currentPositionMasterController--;
+      if(currentPositionMasterController < 0 ) currentPositionMasterController = 0;
+      TablicaDoPC[10] = currentPositionMasterController;
+      _blockSubtrackMasterController = false;
     }
-    else _blockSubtrackMasterController = true;
-    
-  if (!(digitalRead(AddShiftMasterController)))
+  }
+  else _blockSubtrackMasterController = true;
+  
+  if(!(digitalRead(AddShiftMasterController)))
   {
     currentPositionMasterController = 43;
     TablicaDoPC[10] = currentPositionMasterController;
   }
   
-  if (!(digitalRead(SubtrackShiftMasterController)))
+  if(!(digitalRead(SubtrackShiftMasterController)))
   {
     currentPositionMasterController = 0;
     TablicaDoPC[10] = currentPositionMasterController;
@@ -447,37 +451,37 @@ void loop() {
 #pragma endregion
 
 #pragma region Bocznik
-    if(!(digitalRead(AddSecondController)))
-      {
-        if(_blockAddSecondController)
-        {
-          currentPositionSecondController++;
-          if(currentPositionSecondController > 7) currentPositionSecondController = 7;
-          TablicaDoPC[11] = currentPositionSecondController;
-          _blockAddSecondController = false;
-        }
-      }
-      else _blockAddSecondController = true;
-      
-      if(!(digitalRead(SubtrackSecondController)))
-      {
-        if(_blockSubtrackSecondController)
-        {
-          currentPositionSecondController--;
-          if(currentPositionSecondController < 0 ) currentPositionSecondController = 0;
-          TablicaDoPC[11] = currentPositionSecondController;
-          _blockSubtrackSecondController = false;
-        }
-      }
-      else _blockSubtrackSecondController = true;
-      
-  if (!(digitalRead(AddShiftSecondController)))
+  if(!(digitalRead(AddSecondController)))
+  {
+    if(_blockAddSecondController)
+    {
+      currentPositionSecondController++;
+      if(currentPositionSecondController > 7) currentPositionSecondController = 7;
+      TablicaDoPC[11] = currentPositionSecondController;
+      _blockAddSecondController = false;
+    }
+  }
+  else _blockAddSecondController = true;
+  
+  if(!(digitalRead(SubtrackSecondController)))
+  {
+    if(_blockSubtrackSecondController)
+    {
+      currentPositionSecondController--;
+      if(currentPositionSecondController < 0 ) currentPositionSecondController = 0;
+      TablicaDoPC[11] = currentPositionSecondController;
+      _blockSubtrackSecondController = false;
+    }
+  }
+  else _blockSubtrackSecondController = true;
+    
+  if(!(digitalRead(AddShiftSecondController)))
   {
     currentPositionSecondController = 7;
     TablicaDoPC[11] = currentPositionSecondController;
   }
   
-  if (!(digitalRead(SubtrackShiftSecondController)))
+  if(!(digitalRead(SubtrackShiftSecondController)))
   {
     currentPositionSecondController = 0;
     TablicaDoPC[11] = currentPositionSecondController;
@@ -485,19 +489,30 @@ void loop() {
 #pragma endregion
 
 #pragma region UstawienieSygnalowPWM
-analogWrite(PWM_LV_voltage, TablicaZPC[35 - PrzesunieciePreambuly]);
-analogWrite(PWM_HV_current_1, TablicaZPC[19 - PrzesunieciePreambuly]);
-analogWrite(PWM_HV_current_2, TablicaZPC[21 - PrzesunieciePreambuly]);
-analogWrite(PWM_HV_voltage, TablicaZPC[17 - PrzesunieciePreambuly]);
-analogWrite(PWM_BreakPress, TablicaZPC[11 - PrzesunieciePreambuly]);
-analogWrite(PWM_PipePress, TablicaZPC[13 - PrzesunieciePreambuly]);
-analogWrite(PWM_TankPress, TablicaZPC[15 - PrzesunieciePreambuly]);
+  analogWrite(PWM_LV_voltage, TablicaZPC[35 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_current_1, TablicaZPC[19 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_current_2, TablicaZPC[21 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_voltage, TablicaZPC[17 - PrzesunieciePreambuly]);
+  analogWrite(PWM_BreakPress, TablicaZPC[11 - PrzesunieciePreambuly]);
+  analogWrite(PWM_PipePress, TablicaZPC[13 - PrzesunieciePreambuly]);
+  analogWrite(PWM_TankPress, TablicaZPC[15 - PrzesunieciePreambuly]);
 #pragma endregion
 
 #pragma region UstawienieHaslera
-if(Serial3)
-{
-  Serial3.write(TablicaZPC[4 - PrzesunieciePreambuly]);
-}
+  if(Serial3)
+  {
+    if(Serial3.available())
+    {
+      uint8_t tableHasler[30] = { 0 };
+      Serial3.readBytes((char*)tableHasler, 30);
+    }
+
+    haslerFrame.Reset();
+    haslerFrame.AddData(TablicaZPC[4 - PrzesunieciePreambuly]);
+    haslerFrame.CreateFrame();
+    
+    Serial3.write(haslerFrame.fullFrame, haslerFrame.lengthFrame);
+    //Serial3.write(TablicaZPC[4 - PrzesunieciePreambuly]);
+  }
 #pragma endregion
 }

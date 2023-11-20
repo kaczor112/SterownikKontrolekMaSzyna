@@ -69,6 +69,7 @@
 #pragma endregion
 
 #pragma region DefinicjePWM
+#define PWM_LV_current 12
 #define PWM_LV_voltage 11
 #define PWM_HV_current_1 10
 #define PWM_HV_current_2 9
@@ -158,6 +159,7 @@ void setup() {
 #pragma endregion
 
 #pragma region InicjalizacjaPWM
+  pinMode(PWM_LV_current, OUTPUT);
   pinMode(PWM_LV_voltage, OUTPUT);
   pinMode(PWM_HV_current_1, OUTPUT);
   pinMode(PWM_HV_current_2, OUTPUT);
@@ -496,6 +498,24 @@ void loop() {
   analogWrite(PWM_BreakPress, TablicaZPC[11 - PrzesunieciePreambuly]);
   analogWrite(PWM_PipePress, TablicaZPC[13 - PrzesunieciePreambuly]);
   analogWrite(PWM_TankPress, TablicaZPC[15 - PrzesunieciePreambuly]);
+
+  // Sztuczne ustawienie sygnału PWM_LV_current
+  if(!(digitalRead(GuzikZalaczeniePrzetwornicy)) && !(digitalRead(GuzikBateria)))
+  {
+    analogWrite(PWM_LV_current, 200);
+  }
+  else
+  {
+    analogWrite(PWM_LV_current, 127);
+  }  
+
+  // Zerowanie po wyłączeniu programu
+  if((TablicaZPC[11 - PrzesunieciePreambuly] == 0) 
+  && (TablicaZPC[13 - PrzesunieciePreambuly] == 0) 
+  && (TablicaZPC[15 - PrzesunieciePreambuly] == 0))
+  {
+    analogWrite(PWM_LV_current, 0);
+  }
 #pragma endregion
 
 #pragma region UstawienieHaslera

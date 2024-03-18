@@ -205,6 +205,8 @@ void loop() {
 #pragma region KomunikacjaZasadnicza
   // Send/refresh data
   while (!Serial.available()) {
+    SprawdzNastawnikBocznik();
+
     if(!(digitalRead(GuzikWymuszeniaKomunikacji))) 
     {
       if(_blockGuzikWymuszeniaKomunikacji)
@@ -414,6 +416,57 @@ void loop() {
   TablicaDoPC[15] = highByte(tempIndependentBrake);
 #pragma endregion
   
+#pragma region UstawienieSygnalowPWM
+  analogWrite(PWM_LV_voltage, TablicaZPC[35 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_current_1, TablicaZPC[19 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_current_2, TablicaZPC[21 - PrzesunieciePreambuly]);
+  analogWrite(PWM_HV_voltage, TablicaZPC[17 - PrzesunieciePreambuly]);
+  analogWrite(PWM_BreakPress, TablicaZPC[11 - PrzesunieciePreambuly]);
+  analogWrite(PWM_PipePress, TablicaZPC[13 - PrzesunieciePreambuly]);
+  analogWrite(PWM_TankPress, TablicaZPC[15 - PrzesunieciePreambuly]);
+
+  // Sztuczne ustawienie sygnału PWM_LV_current
+  if(!(digitalRead(GuzikZalaczeniePrzetwornicy)) && !(digitalRead(GuzikBateria)))
+  {
+    analogWrite(PWM_LV_current, 200);
+  }
+  else
+  {
+    analogWrite(PWM_LV_current, 127);
+  }  
+
+  // Zerowanie po wyłączeniu programu
+  if((TablicaZPC[11 - PrzesunieciePreambuly] == 0) 
+  && (TablicaZPC[13 - PrzesunieciePreambuly] == 0) 
+  && (TablicaZPC[15 - PrzesunieciePreambuly] == 0))
+  {
+    analogWrite(PWM_LV_current, 0);
+  }
+#pragma endregion
+
+#pragma region UstawienieHaslera
+  if(Serial3)
+  {
+    if(Serial3.available())
+    {
+      uint8_t tableHasler[30] = { 0 };
+      Serial3.readBytes((char*)tableHasler, 30);
+    }
+
+    haslerFrame.Reset();
+    haslerFrame.AddData(TablicaZPC[4 - PrzesunieciePreambuly]);
+    haslerFrame.CreateFrame();
+    
+    Serial3.write(haslerFrame.fullFrame, haslerFrame.lengthFrame);
+    //Serial3.write(TablicaZPC[4 - PrzesunieciePreambuly]);
+  }
+#pragma endregion
+
+  SprawdzNastawnikBocznik();
+}
+
+void SprawdzNastawnikBocznik()
+{
 #pragma region Nastawnik
   if(!(digitalRead(AddMasterController)))
   {
@@ -487,52 +540,6 @@ void loop() {
   {
     currentPositionSecondController = 0;
     TablicaDoPC[11] = currentPositionSecondController;
-  }
-#pragma endregion
-
-#pragma region UstawienieSygnalowPWM
-  analogWrite(PWM_LV_voltage, TablicaZPC[35 - PrzesunieciePreambuly]);
-  analogWrite(PWM_HV_current_1, TablicaZPC[19 - PrzesunieciePreambuly]);
-  analogWrite(PWM_HV_current_2, TablicaZPC[21 - PrzesunieciePreambuly]);
-  analogWrite(PWM_HV_voltage, TablicaZPC[17 - PrzesunieciePreambuly]);
-  analogWrite(PWM_BreakPress, TablicaZPC[11 - PrzesunieciePreambuly]);
-  analogWrite(PWM_PipePress, TablicaZPC[13 - PrzesunieciePreambuly]);
-  analogWrite(PWM_TankPress, TablicaZPC[15 - PrzesunieciePreambuly]);
-
-  // Sztuczne ustawienie sygnału PWM_LV_current
-  if(!(digitalRead(GuzikZalaczeniePrzetwornicy)) && !(digitalRead(GuzikBateria)))
-  {
-    analogWrite(PWM_LV_current, 200);
-  }
-  else
-  {
-    analogWrite(PWM_LV_current, 127);
-  }  
-
-  // Zerowanie po wyłączeniu programu
-  if((TablicaZPC[11 - PrzesunieciePreambuly] == 0) 
-  && (TablicaZPC[13 - PrzesunieciePreambuly] == 0) 
-  && (TablicaZPC[15 - PrzesunieciePreambuly] == 0))
-  {
-    analogWrite(PWM_LV_current, 0);
-  }
-#pragma endregion
-
-#pragma region UstawienieHaslera
-  if(Serial3)
-  {
-    if(Serial3.available())
-    {
-      uint8_t tableHasler[30] = { 0 };
-      Serial3.readBytes((char*)tableHasler, 30);
-    }
-
-    haslerFrame.Reset();
-    haslerFrame.AddData(TablicaZPC[4 - PrzesunieciePreambuly]);
-    haslerFrame.CreateFrame();
-    
-    Serial3.write(haslerFrame.fullFrame, haslerFrame.lengthFrame);
-    //Serial3.write(TablicaZPC[4 - PrzesunieciePreambuly]);
   }
 #pragma endregion
 }

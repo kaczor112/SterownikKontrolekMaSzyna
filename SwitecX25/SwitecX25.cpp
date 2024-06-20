@@ -13,15 +13,12 @@
  * For the program below.
  * 
  * I have introduced modifications to Switec X27 for MaSzyna 2023 pressure gauges.
- * The rest of this library remains unchanged.
  * 
  * Best Regards Pawel Kaczmarczyk
  **/
 
 #include <Arduino.h>
-
 #include "SwitecX25.h"
-
 static byte stateMap[] = {0x1, 0x5, 0x4, 0x7, 0x6, 0x2, 0xE, 0xA, 0xB, 0x8, 0x9, 0xD};
 
 SwitecX25::SwitecX25(unsigned int steps, unsigned char pin1, unsigned char pin2, unsigned char pin3, unsigned char pin4)
@@ -32,7 +29,6 @@ SwitecX25::SwitecX25(unsigned int steps, unsigned char pin1, unsigned char pin2,
   this->pins[1] = pin2;
   this->pins[2] = pin3;
   this->pins[3] = pin4;
-
   for (int i=0;i<pinCount;i++) {
     pinMode(pins[i], OUTPUT);
   }
@@ -96,15 +92,24 @@ void SwitecX25::advance()
     stepDown();
   }
 
-  // microDelay <- nie mniej niż 450.
   int delta = currentStep<targetStep ? targetStep-currentStep : currentStep-targetStep;
 
+  // if(delta < 10) microDelay = 10000;
+  // else if(delta < 20) microDelay = 9000;
+  // else if(delta < 30) microDelay = 8000;
+  // else if(delta < 40) microDelay = 7000;
+  // else if(delta < 50) microDelay = 6000;
+  // else if(delta < 60) microDelay = 5000;
+  // else if(delta < 70) microDelay = 4000;
+  // else if(delta < 80) microDelay = 3000;
+  // else if(delta < 90) microDelay = 2000;
+
+  
   if(delta < 100) microDelay = ((100 - delta) * 100) + 1000;
   else microDelay = minimalMicroDelay; // 500
 
   time0 = micros();
 }
-
 
 void SwitecX25::setPosition(unsigned int pos)
 {
@@ -116,7 +121,6 @@ void SwitecX25::setPosition(unsigned int pos)
       // reset the timer to avoid possible time overflow giving spurious deltas
       stopped = false;
       time0 = micros();
-      //microDelay = 0;
     }
   }
 }

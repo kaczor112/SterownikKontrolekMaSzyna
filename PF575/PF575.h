@@ -37,22 +37,22 @@ public:
     void toggleValue(uint8_t whichBit);                 // Przełącza wartość na przeciwną
     
     // Get
-    bool getP00() const { return getValue(0); }
-    bool getP01() const { return getValue(1); }
-    bool getP02() const { return getValue(2); }
-    bool getP03() const { return getValue(3); }
-    bool getP04() const { return getValue(4); }
-    bool getP05() const { return getValue(5); }
-    bool getP06() const { return getValue(6); }
-    bool getP07() const { return getValue(7); }
-    bool getP10() const { return getValue(8); }
-    bool getP11() const { return getValue(9); }
-    bool getP12() const { return getValue(10); }
-    bool getP13() const { return getValue(11); }
-    bool getP14() const { return getValue(12); }
-    bool getP15() const { return getValue(13); }
-    bool getP16() const { return getValue(14); }
-    bool getP17() const { return getValue(15); }
+    bool getP00() { return getValue(0); }
+    bool getP01() { return getValue(1); }
+    bool getP02() { return getValue(2); }
+    bool getP03() { return getValue(3); }
+    bool getP04() { return getValue(4); }
+    bool getP05() { return getValue(5); }
+    bool getP06() { return getValue(6); }
+    bool getP07() { return getValue(7); }
+    bool getP10() { return getValue(8); }
+    bool getP11() { return getValue(9); }
+    bool getP12() { return getValue(10); }
+    bool getP13() { return getValue(11); }
+    bool getP14() { return getValue(12); }
+    bool getP15() { return getValue(13); }
+    bool getP16() { return getValue(14); }
+    bool getP17() { return getValue(15); }
 
     // Set
     void setP00(bool value) { setValue(0, value); }

@@ -102,5 +102,6 @@ void PF575::toggleValue(uint8_t whichBit)
 {
     changeSave = true;
     bitSet(maskOfSetBits, whichBit); 
-    bitToggle(myData, whichBit);
+    //bitToggle(myData, whichBit);
+	myData ^= (1UL << whichBit);
 }
